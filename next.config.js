@@ -11,5 +11,9 @@ module.exports = {
   // Désactiver les vérifications ESLint pendant le build
   eslint: {
     ignoreDuringBuilds: true
+  },
+  // Configuration spécifique pour Cloudflare Pages
+  experimental: {
+    outputFileTracingRoot: process.env.NODE_ENV === "development" ? undefined : process.cwd(),
   }
 };

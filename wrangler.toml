@@ -1,0 +1,7 @@
+# Fichier de configuration wrangler.toml pour Cloudflare Pages
+name = "festiveambience"
+main = "_worker.js"
+compatibility_date = "2025-03-05"
+
+[site]
+bucket = ".next" 
