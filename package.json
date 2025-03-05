@@ -8,10 +8,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --no-lint",
-    "build-static": "set NEXT_DISABLE_TYPES=1 && next build --no-lint",
+    "build-static": "next export",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "wrangler pages deploy .next --project-name=festiveambience"
+    "deploy": "wrangler pages deploy out --project-name=festiveambience"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.3",

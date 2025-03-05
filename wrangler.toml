@@ -4,7 +4,7 @@ main = "_worker.js"
 compatibility_date = "2025-03-05"
 
 # Définir le dossier de sortie pour Cloudflare Pages
-pages_build_output_dir = ".next"
+pages_build_output_dir = "out"
 
 [site]
-bucket = ".next" 
+bucket = "out" 
