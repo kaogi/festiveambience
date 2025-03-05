@@ -1,41 +1,45 @@
 module.exports = {
+  // Export statique pour Cloudflare Pages
   output: 'export',
+  
+  // Configuration des images statiques
   images: {
     domains: ['i.ytimg.com', 'img.youtube.com'],
     unoptimized: true, // Nécessaire pour Cloudflare Pages
     loader: 'custom',
     loaderFile: './src/utils/imageLoader.js'
   },
-  // Désactiver les vérifications de types pendant le build
+  
+  // Désactiver les vérifications pendant le build
   typescript: {
     ignoreBuildErrors: true
   },
-  // Désactiver les vérifications ESLint pendant le build
   eslint: {
     ignoreDuringBuilds: true
   },
-  // Déplacer la configuration outputFileTracingRoot hors de experimental
+  
+  // Configuration pour Next.js
   outputFileTracingRoot: process.env.NODE_ENV === "development" ? undefined : process.cwd(),
   
-  // Optimisations supplémentaires pour réduire la taille du bundle
+  // Optimisations pour réduire la taille du bundle
   webpack: (config, { dev, isServer }) => {
-    // Ne pas inclure les bibliothèques client volumineuses dans le bundle serveur
+    // Optimisations côté serveur
     if (isServer) {
-      const externals = ['three', '@react-three/fiber', '@react-three/drei', 'framer-motion'];
-      config.externals.push(...externals);
+      // Externaliser framer-motion pour des builds plus légers
+      config.externals.push('framer-motion');
     }
     
-    // Optimisations supplémentaires pour réduire la taille du bundle client
+    // Optimisations côté client
     if (!isServer) {
-      // Activer la compression et la minification avancée
+      // Activer la compression et la minification
       config.optimization.minimize = true;
       
-      // Désactivation du source map en production
+      // Désactiver les source maps en production
       if (!dev) {
         config.devtool = false;
       }
       
-      // Segmenter le bundle en plus petits morceaux
+      // Optimiser le chunking pour des fichiers plus petits
       config.optimization.splitChunks = {
         chunks: 'all',
         maxSize: 20000000, // 20 Mo max par chunk
@@ -46,12 +50,6 @@ module.exports = {
               const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
               return `vendor.${packageName.replace('@', '')}`;
             },
-            priority: 10,
-          },
-          threejs: {
-            test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
-            name: 'vendor.threejs',
-            priority: 20,
           },
         },
       };
@@ -60,6 +58,6 @@ module.exports = {
     return config;
   },
   
-  // Désactiver le serveur pour une génération statique complète
+  // Configuration pour génération statique
   trailingSlash: true
 };

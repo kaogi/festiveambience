@@ -14,14 +14,11 @@
     "deploy": "wrangler pages deploy out --project-name=festiveambience"
   },
   "dependencies": {
-    "@react-three/drei": "^10.0.3",
-    "@react-three/fiber": "^9.0.4",
     "@types/xml2js": "^0.4.14",
     "framer-motion": "^12.4.10",
     "next": "15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "three": "^0.174.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
