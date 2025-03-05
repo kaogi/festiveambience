@@ -11,7 +11,7 @@
     "build-static": "set NEXT_DISABLE_TYPES=1 && next build --no-lint",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "wrangler pages deploy .next/static --project-name=festiveambience"
+    "deploy": "wrangler pages deploy .next --project-name=festiveambience"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.3",

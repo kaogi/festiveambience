@@ -3,5 +3,8 @@ name = "festiveambience"
 main = "_worker.js"
 compatibility_date = "2025-03-05"
 
+# Définir le dossier de sortie pour Cloudflare Pages
+pages_build_output_dir = ".next"
+
 [site]
 bucket = ".next" 

@@ -12,8 +12,18 @@ module.exports = {
   eslint: {
     ignoreDuringBuilds: true
   },
-  // Configuration spécifique pour Cloudflare Pages
-  experimental: {
-    outputFileTracingRoot: process.env.NODE_ENV === "development" ? undefined : process.cwd(),
+  // Déplacer la configuration outputFileTracingRoot hors de experimental
+  outputFileTracingRoot: process.env.NODE_ENV === "development" ? undefined : process.cwd(),
+  
+  // Configuration supplémentaire pour réduire la taille du bundle
+  // pour Cloudflare Pages (limite de 25 Mo)
+  webpack: (config, { dev, isServer }) => {
+    // Ne pas inclure les bibliothèques client dans le bundle serveur
+    if (isServer) {
+      // Externalize les modules node qui ne devraient pas être bundled
+      config.externals.push('three', '@react-three/fiber', '@react-three/drei');
+    }
+    
+    return config;
   }
 };
