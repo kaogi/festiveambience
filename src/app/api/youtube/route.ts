@@ -2,6 +2,9 @@ import { parseStringPromise } from 'xml2js';
 import { VideoEntry, Playlist } from '@/types';
 import { NextResponse } from 'next/server';
 
+// Pour la génération statique, nous devons pré-générer les données
+export const dynamic = "force-static";
+
 // Channel RSS URL from the technical document
 const CHANNEL_RSS_URL = 'https://www.youtube.com/feeds/videos.xml?channel_id=UC50vfiAGflBnDv6PD1NNTrw';
 
@@ -179,156 +182,22 @@ function transformVideoEntry(entry: any): VideoEntry {
 }
 
 // API Route handler for videos
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type');
-  const playlistIndex = searchParams.get('playlistIndex');
+export async function GET() {
+  // Avec mode export statique, nous allons retourner des données statiques
+  // au lieu d'utiliser les paramètres de requête
   
-  try {
-    // Get channel videos
-    if (type === 'videos') {
-      console.log('API Route: Fetching channel videos');
-      try {
-        const xmlText = await serverFetch(CHANNEL_RSS_URL);
-        
-        if (!xmlText) {
-          console.warn('No data received from channel feed, using placeholders');
-          return NextResponse.json(generatePlaceholderVideos());
-        }
-        
-        const result = await parseStringPromise(xmlText);
-        
-        if (!result.feed || !result.feed.entry || !Array.isArray(result.feed.entry)) {
-          console.warn('Invalid RSS feed structure, using placeholders');
-          return NextResponse.json(generatePlaceholderVideos());
-        }
-        
-        console.log(`Found ${result.feed.entry.length} videos in channel feed`);
-        return NextResponse.json(result.feed.entry.map(transformVideoEntry));
-      } catch (error) {
-        console.error('Error fetching channel videos:', error);
-        return NextResponse.json(generatePlaceholderVideos());
-      }
-    }
-    
-    // Get specific playlist
-    if (type === 'playlist' && playlistIndex) {
-      const index = parseInt(playlistIndex, 10);
-      
-      if (isNaN(index) || index < 0 || index >= PLAYLIST_RSS_URLS.length) {
-        console.warn(`Invalid playlist index: ${playlistIndex}, using placeholders`);
-        return NextResponse.json(generatePlaceholderVideos());
-      }
-      
-      console.log(`API Route: Fetching playlist videos for index ${index}`);
-      try {
-        const xmlText = await serverFetch(PLAYLIST_RSS_URLS[index]);
-        
-        if (!xmlText) {
-          console.warn(`No data received from playlist ${index}, using placeholders`);
-          return NextResponse.json(generatePlaceholderVideos());
-        }
-        
-        const result = await parseStringPromise(xmlText);
-        
-        if (!result.feed || !result.feed.entry || !Array.isArray(result.feed.entry)) {
-          console.warn(`Invalid RSS feed structure for playlist ${index}, using placeholders`);
-          return NextResponse.json(generatePlaceholderVideos());
-        }
-        
-        console.log(`Found ${result.feed.entry.length} videos in playlist ${index}`);
-        return NextResponse.json(result.feed.entry.map(transformVideoEntry));
-      } catch (error) {
-        console.error(`Error fetching playlist videos for index ${index}:`, error);
-        return NextResponse.json(generatePlaceholderVideos());
-      }
-    }
-    
-    // Get all playlists
-    if (type === 'playlists') {
-      console.log('API Route: Fetching all playlists');
-      try {
-        // Use Promise.all to fetch all playlists concurrently
-        const playlistPromises = PLAYLIST_RSS_URLS.map(async (url, index) => {
-          try {
-            const xmlText = await serverFetch(url);
-            
-            if (!xmlText) {
-              console.warn(`No data received from playlist ${index}, skipping`);
-              return null;
-            }
-            
-            const result = await parseStringPromise(xmlText);
-            
-            if (!result.feed || !result.feed.entry || !Array.isArray(result.feed.entry)) {
-              console.warn(`Invalid RSS feed structure for playlist ${index}, skipping`);
-              return null;
-            }
-            
-            const videos = result.feed.entry.map(transformVideoEntry);
-            
-            // Extraire le titre réel de la playlist depuis les données RSS
-            // Le titre est généralement disponible dans result.feed.title[0]
-            const realPlaylistTitle = result.feed.title && result.feed.title[0] 
-              ? result.feed.title[0]
-              : PLAYLIST_NAMES[index] || `Playlist ${index + 1}`;
-              
-            console.log(`Playlist ${index} real title: ${realPlaylistTitle}`);
-            
-            // Get the first video's thumbnail as the playlist thumbnail
-            const thumbnailUrl = videos.length > 0 
-              ? videos[0].thumbnail 
-              : '/assets/images/placeholder-playlist.jpg';
-            
-            // Extraire l'ID de la playlist depuis l'URL RSS
-            const playlistIdMatch = url.match(/playlist_id=([^&]+)/);
-            const playlistId = playlistIdMatch ? playlistIdMatch[1] : '';
-            // Construire l'URL YouTube vers la playlist
-            const youtubePlaylistUrl = playlistId 
-              ? `https://www.youtube.com/playlist?list=${playlistId}` 
-              : '';
-              
-            console.log(`Playlist URL: ${youtubePlaylistUrl}`);
-            
-            return {
-              id: `playlist-${index}`,
-              title: realPlaylistTitle,
-              description: `A collection of ${videos.length} festive window projections for your home`,
-              thumbnailUrl,
-              videos,
-              url: youtubePlaylistUrl,
-            };
-          } catch (error) {
-            console.error(`Error fetching playlist ${index}`, error);
-            return null;
-          }
-        });
-        
-        // Wait for all playlist promises to resolve
-        const playlists = await Promise.all(playlistPromises);
-        
-        // Filter out any null results
-        const validPlaylists = playlists.filter(playlist => playlist !== null) as Playlist[];
-        
-        console.log(`Successfully fetched ${validPlaylists.length} playlists`);
-        
-        // Return placeholders if we didn't get any valid playlists
-        if (validPlaylists.length === 0) {
-          console.warn('No valid playlists fetched, using placeholders');
-          return NextResponse.json(generatePlaceholderPlaylists());
-        }
-        
-        return NextResponse.json(validPlaylists);
-      } catch (error) {
-        console.error('Error fetching all playlists:', error);
-        return NextResponse.json(generatePlaceholderPlaylists());
-      }
-    }
-    
-    // Default response if no valid type is provided
-    return NextResponse.json({ error: "Invalid request type. Use 'videos', 'playlist', or 'playlists'." }, { status: 400 });
-  } catch (error) {
-    console.error('API route error:', error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
+  // Générer des vidéos pour toutes les sections
+  const allVideos = generatePlaceholderVideos(20);
+  
+  // Générer des playlists pour la page des playlists
+  const allPlaylists = generatePlaceholderPlaylists(20);
+  
+  // Retourner les données statiques
+  return NextResponse.json({
+    videos: allVideos,
+    playlists: allPlaylists.map((playlist, index) => ({
+      ...playlist,
+      title: PLAYLIST_NAMES[index] || playlist.title 
+    }))
+  });
 } 
